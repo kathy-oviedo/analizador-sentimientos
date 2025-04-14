@@ -1,24 +1,30 @@
 import streamlit as st
-from textblob import TextBlob
+from transformers import pipeline
 
 st.set_page_config(page_title="Analizador de Sentimientos", page_icon="🧠")
+st.title("🧠 Analizador de Sentimientos en Español")
+st.write("Este analizador usa el modelo BETO entrenado para detectar sentimientos en español 🇪🇸")
 
-st.title("🧠 Analizador de Sentimientos")
-st.write("Escribe un texto en español y detectaremos su sentimiento usando TextBlob.")
+texto = st.text_area("✏️ Escribe aquí tu frase en español:")
 
-texto = st.text_area("✏️ Ingresa tu frase aquí:")
+@st.cache_resource
+def cargar_modelo():
+    return pipeline("sentiment-analysis", model="finiteautomata/beto-sentiment-analysis")
 
-if st.button("🔍 Analizar"):
+analizador = cargar_modelo()
+
+if st.button("🔍 Analizar sentimiento"):
     if texto:
-        blob = TextBlob(texto)
-        polaridad = blob.sentiment.polarity
+        resultado = analizador(texto)[0]
+        etiqueta = resultado['label']
+        score = round(resultado['score'] * 100, 2)
 
-        if polaridad > 0:
-            st.success("💚 Sentimiento positivo")
-        elif polaridad < 0:
-            st.error("❤️‍🩹 Sentimiento negativo")
+        if etiqueta == 'POS':
+            st.success(f"💚 Positivo ({score}%)")
+        elif etiqueta == 'NEG':
+            st.error(f"❤️‍🩹 Negativo ({score}%)")
         else:
-            st.info("💬 Sentimiento neutral")
+            st.info(f"💬 Neutral ({score}%)")
     else:
-        st.warning("¡Escribe algo primero!")
+        st.warning("¡Por favor escribe algo para analizar!")
 
